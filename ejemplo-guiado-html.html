@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cómo abordar un ejercicio de HTML — Ejemplo guiado</title>
+<style>
+  :root{
+    --olive:#455F51; --olive-d:#374C40; --green:#63A537; --lime:#99CB38;
+    --gold:#CC9700; --cyan:#4EB3CF; --blue:#378DA6;
+    --bg:#F3F4F0; --panel:#FFFFFF; --panel-2:#F7F8F5; --line:#E1E4DD;
+    --ink:#20261F; --ink-dim:#5B665A;
+    --code-bg:#1E1E1E; --code-bar:#2B2B2B; --code-line:#2A2A2A;
+    --code-fg:#D4D4D4; --code-tag:#6CA0DC; --code-attr:#9CDCFE; --code-str:#CE9178;
+    --code-punc:#8A8A8A; --code-num:#B5CEA8; --code-gutter:#6E6E6E;
+    --focus:#2F6F4E;
+  }
+  :root[data-theme="dark"], :root:not([data-theme="light"]) {}
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#151813; --panel:#1D211B; --panel-2:#232821; --line:#333A2F;
+      --ink:#ECEFE7; --ink-dim:#AEB8A6;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#151813; --panel:#1D211B; --panel-2:#232821; --line:#333A2F;
+    --ink:#ECEFE7; --ink-dim:#AEB8A6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    height:100vh; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  a{color:var(--blue);}
+
+  /* ---------- Top bar ---------- */
+  header.topbar{
+    position:relative; flex:0 0 auto; z-index:20;
+    background:var(--olive); color:#fff;
+    padding:14px 20px 12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  .topbar-row{
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    max-width:1400px; margin:0 auto;
+  }
+  .topbar-title{
+    display:flex; flex-direction:column; gap:2px; margin-right:auto; min-width:220px;
+  }
+  .topbar-title .kicker{
+    font-size:12px; letter-spacing:.06em; color:var(--lime); font-weight:700;
+  }
+  .topbar-title h1{
+    font-size:18px; margin:0; font-weight:700; line-height:1.2;
+  }
+  .controls{ display:flex; align-items:center; gap:8px; }
+  .ctrl-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:38px; height:38px; border-radius:10px; border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.08); color:#fff; cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .ctrl-btn:hover{ background:rgba(255,255,255,.18); }
+  .ctrl-btn:active{ transform:scale(.94); }
+  .ctrl-btn svg{ width:16px; height:16px; fill:#fff; }
+  .ctrl-btn.play{
+    width:46px; height:46px; background:var(--lime); border-color:var(--lime);
+  }
+  .ctrl-btn.play:hover{ background:#a9d94d; }
+  .ctrl-btn.play svg{ fill:var(--olive-d); width:18px; height:18px; }
+  .step-indicator{
+    font-size:13px; color:#E7ECE1; min-width:92px; text-align:center; font-variant-numeric:tabular-nums;
+  }
+  .speed-select{
+    background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:8px 10px; font-size:12.5px; cursor:pointer;
+  }
+  .speed-select option{ color:#111; }
+
+  .progress-track{
+    max-width:1400px; margin:12px auto 0; height:6px; border-radius:4px;
+    background:rgba(255,255,255,.15); overflow:hidden; position:relative; cursor:pointer;
+  }
+  .progress-fill{
+    height:100%; background:linear-gradient(90deg,var(--lime),var(--gold));
+    border-radius:4px; transition:width .35s ease;
+  }
+  .dots{ max-width:1400px; margin:8px auto 0; display:flex; gap:6px; flex-wrap:wrap; }
+  .dot{
+    width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.28);
+    cursor:pointer; border:none; padding:0; transition:background .15s ease, transform .15s ease;
+  }
+  .dot.done{ background:rgba(255,255,255,.55); }
+  .dot.active{ background:var(--lime); transform:scale(1.35); }
+
+  /* ---------- Explain banner ---------- */
+  .explain-wrap{ background:var(--panel-2); border-bottom:1px solid var(--line); flex:0 0 auto; }
+  .explain{
+    max-width:1400px; margin:0 auto; padding:12px 20px;
+    display:flex; gap:12px; align-items:flex-start;
+  }
+  .explain-badge{
+    flex:0 0 auto; width:26px; height:26px; border-radius:50%;
+    background:var(--green); color:#fff; font-weight:700; font-size:13px;
+    display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .explain-text{ font-size:14.5px; line-height:1.55; color:var(--ink); }
+  .explain-text b{ color:var(--olive); }
+  .explain-text code{
+    background:#5d6e42; padding:1px 5px; border-radius:4px; font-size:13px;
+    font-family:"SF Mono",Consolas,"Cascadia Code",Menlo,monospace;
+  }
+
+  /* ---------- Main layout ---------- */
+  main.layout{
+    flex:1 1 auto; min-height:0; display:grid; gap:14px; padding:16px 20px 16px;
+    max-width:1400px; margin:0 auto; width:100%;
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: 1fr;
+  }
+  @media (max-width: 980px){
+    main.layout{ grid-template-columns:1fr; grid-template-rows:auto auto auto; overflow-y:auto; }
+  }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    overflow:hidden; display:flex; flex-direction:column; min-height:0;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .panel-head{
+    padding:10px 14px; border-bottom:1px solid var(--line);
+    font-size:12.5px; font-weight:700; letter-spacing:.03em; color:var(--ink-dim);
+    display:flex; align-items:center; gap:8px; background:var(--panel-2);
+  }
+  .panel-head .dot-ico{ width:8px; height:8px; border-radius:50%; background:var(--green); }
+
+  /* ---------- Enunciado ---------- */
+  .req-panel{ min-height:0; }
+  .req-scroll{ padding:14px; overflow-y:auto; flex:1; min-height:0; }
+  .req-intro{
+    font-size:14px; line-height:1.6; color:var(--ink-dim);
+    padding-bottom:12px; margin-bottom:12px; border-bottom:1px dashed var(--line);
+  }
+  .req-item{
+    display:flex; gap:10px; padding:11px 10px; border-radius:10px; margin-bottom:6px;
+    cursor:pointer; border:1px solid transparent; transition:background .18s ease, border-color .18s ease;
+  }
+  .req-item:hover{ background:var(--panel-2); }
+  .req-num{
+    flex:0 0 auto; width:24px; height:24px; border-radius:50%;
+    background:var(--line); color:var(--ink-dim); font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; margin-top:1px;
+    transition:background .18s ease, color .18s ease;
+  }
+  .req-body h4{ margin:0 0 3px; font-size:13.5px; color:var(--ink); }
+  .req-body p{ margin:0; font-size:12.8px; line-height:1.5; color:var(--ink-dim); }
+
+  .req-item.active{
+    background:#EAF3E0; border-color:#CFE4B8;
+  }
+  .req-item.active .req-num{ background:var(--green); color:#fff; }
+  .req-item.active h4{ color:var(--olive); }
+  .req-item.done .req-num{ background:#D8E4CF; color:var(--olive); }
+  .req-outro{
+    margin-top:12px; padding:11px 12px; border-radius:10px;
+    background:#FBF3DE; border:1px solid #EFDFA8;
+    font-size:12.5px; line-height:1.55; color:#6B5417;
+  }
+  .req-outro b{ color:#8A6A0F; }
+
+  /* ---------- Right column ---------- */
+  .right-col{ display:flex; flex-direction:column; gap:14px; min-width:0; min-height:0; }
+
+  /* ---------- Editor (VS Code look) ---------- */
+  .editor-panel{ background:var(--code-bg); border:1px solid #000; flex:1.35 1 0; min-height:0; }
+  .editor-bar{
+    background:var(--code-bar); padding:0; display:flex; align-items:center; flex:0 0 auto;
+  }
+  .traffic{ display:flex; gap:6px; padding:0 12px; }
+  .traffic span{ width:11px; height:11px; border-radius:50%; display:inline-block; }
+  .traffic .r{ background:#FF5F56; } .traffic .y{ background:#FFBD2E; } .traffic .g{ background:#27C93F; }
+  .tab{
+    background:#1E1E1E; color:var(--code-fg); font-size:12.5px; padding:9px 16px 8px;
+    display:flex; align-items:center; gap:7px; border-right:1px solid #111;
+    font-family:"SF Mono",Consolas,"Cascadia Code",Menlo,monospace;
+  }
+  .tab .file-dot{ width:8px; height:8px; border-radius:2px; background:#E34F26; }
+  .code-scroll{
+    overflow-y:auto; padding:14px 0 18px; flex:1; min-height:0;
+  }
+  .code-line{
+    display:flex; font-family:"SF Mono",Consolas,"Cascadia Code",Menlo,monospace;
+    font-size:13px; line-height:20px; white-space:pre;
+    padding:0 14px; border-left:3px solid transparent;
+  }
+  .code-line .ln-no{
+    width:30px; flex:0 0 auto; color:var(--code-gutter); text-align:right;
+    margin-right:16px; user-select:none;
+  }
+  .code-line .ln-code{ color:var(--code-fg); }
+  .code-line.added{ animation:flashLine 1.7s ease-out; border-left-color:var(--lime); }
+  @keyframes flashLine{
+    0%{ background:rgba(153,203,56,.28); }
+    100%{ background:transparent; }
+  }
+  .tk-tag{ color:var(--code-tag); }
+  .tk-at{ color:var(--code-attr); }
+  .tk-st{ color:var(--code-str); }
+  .tk-pc{ color:var(--code-punc); }
+  .tk-cm{ color:#6A9955; font-style:italic; }
+  .tk-tx{ color:var(--code-fg); }
+
+  /* ---------- Preview (browser look) ---------- */
+  .preview-panel{ min-height:0; flex:1 1 0; }
+  .browser-bar{
+    background:var(--panel-2); border-bottom:1px solid var(--line);
+    padding:9px 12px; display:flex; align-items:center; gap:10px; flex:0 0 auto;
+  }
+  .browser-url{
+    flex:1; background:#fff; border:1px solid var(--line); border-radius:999px;
+    padding:6px 12px; font-size:12px; color:var(--ink-dim);
+    font-family:"SF Mono",Consolas,monospace;
+    display:flex; align-items:center; gap:6px; overflow:hidden;
+  }
+  .browser-url svg{ width:12px; height:12px; flex:0 0 auto; fill:var(--green); }
+  .preview-frame-wrap{ flex:1; min-height:0; background:#fff; }
+  iframe.preview{ width:100%; height:100%; border:0; display:block; background:#fff; }
+
+  /* ---------- Footer strip ---------- */
+  .footbar{ height:10px; display:flex; flex:0 0 auto; }
+  .footbar span{ flex:1; }
+  .footbar .fb-lime{ background:var(--lime); flex:0.65; }
+  .footbar .fb-gold{ background:var(--gold); flex:0.35; }
+
+  /* ---------- Restart hint ---------- */
+  .hint{
+    font-size:11px; color:var(--ink-dim); text-align:center; padding:3px 0; margin:0;
+    flex:0 0 auto; background:var(--panel);
+  }
+  kbd{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:4px;
+    padding:1px 5px; font-size:10.5px; font-family:inherit;
+  }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb{ background:#00000022; border-radius:6px; }
+  .code-scroll::-webkit-scrollbar-thumb{ background:#ffffff22; }
+
+  /* ---------- Mobile overrides (must stay last: same specificity as base rules above) ---------- */
+  @media (max-width: 980px){
+    .req-panel{ min-height:240px; max-height:340px; flex:none; }
+    .right-col{ min-height:auto; }
+    .editor-panel{ min-height:360px; flex:none; }
+    .preview-panel{ min-height:300px; flex:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="topbar-title">
+      <span class="kicker">EJEMPLO GUIADO · CÓMO ABORDAR UN EJERCICIO</span>
+      <h1 id="stepTitle">Mi Top 3: series de ciencia ficción</h1>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="btnRestart" title="Reiniciar (R)">
+        <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="btnPrev" title="Anterior (←)">
+        <svg viewBox="0 0 24 24"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
+      </button>
+      <button class="ctrl-btn play" id="btnPlay" title="Reproducir / Pausar (Espacio)">
+        <svg id="iconPlay" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="iconPause" viewBox="0 0 24 24" style="display:none"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="btnNext" title="Siguiente (→)">
+        <svg viewBox="0 0 24 24"><path d="M8.6 7.4 10 6l6 6-6 6-1.4-1.4L14.2 12z"/></svg>
+      </button>
+      <span class="step-indicator" id="stepIndicator">Paso 1 / 9</span>
+      <select class="speed-select" id="speedSelect" title="Velocidad de reproducción">
+        <option value="6000">Lenta</option>
+        <option value="4000" selected>Normal</option>
+        <option value="2200">Rápida</option>
+      </select>
+    </div>
+  </div>
+  <div class="progress-track" id="progressTrack">
+    <div class="progress-fill" id="progressFill" style="width:11%"></div>
+  </div>
+  <div class="dots" id="dots"></div>
+</header>
+
+<div class="explain-wrap">
+  <div class="explain">
+    <div class="explain-badge">i</div>
+    <div class="explain-text" id="explainText">Cargando…</div>
+  </div>
+</div>
+
+<main class="layout">
+  <section class="panel req-panel">
+    <div class="panel-head"><span class="dot-ico"></span> Enunciado del ejercicio</div>
+    <div class="req-scroll" id="reqScroll">
+      <div class="req-intro">
+        <strong>Antes de los ejercicios.</strong> Vas a construir, paso a paso, una ficha con tu Top&nbsp;3 de series de ciencia ficción favoritas. Usaremos exactamente las mismas técnicas que necesitarás para completar el <em>Diario de noticias</em>, el <em>Libro de recetas</em> y las <em>Tablas con caracteres especiales</em>: estructura semántica, énfasis de texto, listas, imágenes, enlaces y tablas con celdas combinadas.
+        <br><br>
+        Haz clic en cualquier punto del enunciado para saltar a ese paso, o dale a ▶ para verlo completo.
+      </div>
+      <div id="reqList"></div>
+      <div class="req-outro" id="reqOutro"></div>
+    </div>
+  </section>
+
+  <section class="right-col">
+    <div class="panel editor-panel">
+      <div class="editor-bar">
+        <div class="traffic"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+        <div class="tab"><span class="file-dot"></span> index.html</div>
+      </div>
+      <div class="code-scroll" id="codeScroll"></div>
+    </div>
+
+    <div class="panel preview-panel">
+      <div class="browser-bar">
+        <div class="traffic"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+        <div class="browser-url">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 01-8-8 8 8 0 018-8 8 8 0 018 8 8 8 0 01-8 8z"/></svg>
+          vista-previa.html
+        </div>
+      </div>
+      <div class="preview-frame-wrap">
+        <iframe class="preview" id="previewFrame" title="Vista previa en vivo" sandbox=""></iframe>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="footbar"><span class="fb-lime"></span><span class="fb-gold"></span></div>
+<p class="hint">Flechas <kbd>←</kbd> <kbd>→</kbd> para avanzar paso a paso · <kbd>Espacio</kbd> reproducir/pausar · <kbd>R</kbd> reiniciar</p>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------------------------------------------------------
+  // 1. Contenido: requisitos del enunciado + código acumulado por paso
+  // ---------------------------------------------------------------
+  var REQS = [
+    { title:"Estructura básica",  body:"Crea la plantilla básica de un documento HTML5: la declaración doctype, la etiqueta html con su idioma, y dentro del head los metadatos de codificación y viewport. El body queda vacío por ahora." },
+    { title:"Título de la pestaña", body:"Cambia el título de la página para que en la pestaña del navegador aparezca «Mis series favoritas». Es lo primero que ve quien visita tu web, aunque no forme parte del contenido visible." },
+    { title:"Cabecera", body:"Añade una etiqueta header con el título principal de la página, usando un único h1. Solo puede haber un h1 por documento." },
+    { title:"Introducción", body:"Dentro de main, escribe un párrafo breve presentando el contenido: de qué trata la página y qué va a encontrar quien la visite." },
+    { title:"Dar énfasis al texto", body:"Amplía la introducción usando correctamente las etiquetas de énfasis según su significado: strong para lo importante, em para lo que se recalca al leerlo, mark para resaltar una palabra clave y small para un aviso de letra pequeña." },
+    { title:"Lista de las series", body:"Crea una lista ordenada — es un Top 3, así que el orden importa — con tus tres series favoritas. Destaca el nombre de cada una con strong." },
+    { title:"Separar el contenido", body:"Añade una línea horizontal para marcar un cambio de tema entre la lista y el resto del contenido." },
+    { title:"Imagen representativa", body:"Incluye una imagen relacionada con el tema, con su correspondiente texto alternativo (atributo alt) por si no llega a cargar." },
+    { title:"Enlace a una web externa", body:"Añade un enlace a la web oficial de una de las series. Debe abrirse en una pestaña nueva." },
+    { title:"Tabla comparativa", body:"Añade una tabla que compare las tres series por temporadas y valoración, con un título (caption) y encabezados (th) bien diferenciados de los datos (td)." },
+    { title:"Combinar celdas", body:"Añade una columna de categoría y combina verticalmente (rowspan) las celdas que compartan el mismo valor. Combina también horizontalmente (colspan) un encabezado que agrupe varias columnas." },
+    { title:"Pie de página", body:"Cierra la página con un footer que incluya una etiqueta address con tus datos de autoría, y el símbolo © mediante su entidad HTML." }
+  ];
+
+  var EXPLAIN = [
+    'Primero creamos el <b>esqueleto</b> de todo documento HTML5: <code>&lt;!DOCTYPE html&gt;</code>, la etiqueta <code>&lt;html&gt;</code> con el idioma, y dentro del <code>&lt;head&gt;</code> los metadatos básicos (codificación y viewport). El <code>&lt;body&gt;</code> se queda vacío por ahora.',
+    'El enunciado pide un título concreto en la pestaña. Eso se controla con <code>&lt;title&gt;</code>, que va dentro del <code>&lt;head&gt;</code> porque es un metadato, no contenido visible.',
+    'Para la cabecera visible usamos la etiqueta semántica <code>&lt;header&gt;</code>, y dentro un <code>&lt;h1&gt;</code> con el título principal — solo debe haber un <code>&lt;h1&gt;</code> por página.',
+    'Todo el contenido principal va dentro de <code>&lt;main&gt;</code>. Empezamos con un párrafo <code>&lt;p&gt;</code> de introducción.',
+    'Cada etiqueta de énfasis tiene un significado distinto: <code>&lt;strong&gt;</code> indica importancia, <code>&lt;em&gt;</code> aporta énfasis al leer la frase, <code>&lt;mark&gt;</code> resalta una palabra relevante para el contexto y <code>&lt;small&gt;</code> marca texto secundario, como un aviso. Elegir la etiqueta correcta no es solo cuestión de estilo visual.',
+    'Como es una lista <b>con orden</b> (un Top 3), usamos <code>&lt;ol&gt;</code> en vez de <code>&lt;ul&gt;</code>. Cada serie va en un <code>&lt;li&gt;</code>, y destacamos su nombre con <code>&lt;strong&gt;</code> porque es información importante.',
+    'La etiqueta <code>&lt;hr&gt;</code> representa un cambio temático: separa visualmente bloques de contenido que no están directamente relacionados entre sí.',
+    'Añadimos una imagen con <code>&lt;img&gt;</code>. El atributo <code>src</code> indica el archivo y <code>alt</code> es obligatorio: describe la imagen para quien no puede verla — o si el archivo no carga, como ahora.',
+    'Un enlace se crea con <code>&lt;a href="..."&gt;</code>. Como debe abrirse en una pestaña nueva, añadimos <code>target="_blank"</code> — y por seguridad, <code>rel="noopener noreferrer"</code>.',
+    'Para comparar las series usamos una <code>&lt;table&gt;</code>. <code>&lt;caption&gt;</code> le da título, <code>&lt;thead&gt;</code> agrupa los encabezados (<code>&lt;th&gt;</code>) y <code>&lt;tbody&gt;</code> las filas de datos (<code>&lt;td&gt;</code>). Añadimos también un pequeño <code>&lt;style&gt;</code> con bordes, solo para que se vea bien la estructura — el CSS a fondo lo veremos más adelante.',
+    '<code>rowspan</code> hace que una celda ocupe varias filas — útil para agrupar valores repetidos, como aquí la categoría. <code>colspan</code> hace que ocupe varias columnas, por ejemplo un encabezado que agrupa varias columnas relacionadas.',
+    'Cerramos con un <code>&lt;footer&gt;</code>. Dentro usamos <code>&lt;address&gt;</code> para los datos de autoría — es la etiqueta semánticamente correcta para ese tipo de información — y la entidad <code>&amp;copy;</code> para el símbolo ©, que no se puede escribir directamente.'
+  ];
+
+  var CODE = [];
+
+  CODE[0] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'</head>\n'+
+'<body>\n'+
+'\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[1] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'</head>\n'+
+'<body>\n'+
+'\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[2] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[3] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis tres series de ciencia ficción favoritas de todos los tiempos.</p>\n'+
+'  </main>\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[4] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis <strong>tres series de ciencia ficción</strong> favoritas de todos los tiempos, y <em>de verdad</em> las recomiendo. Si tuviera que quedarme con una, sería <mark>The Expanse</mark>.</p>\n'+
+'\n'+
+'    <p><small>Todas las valoraciones son personales y pueden cambiar con el tiempo.</small></p>\n'+
+'  </main>\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[5] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis <strong>tres series de ciencia ficción</strong> favoritas de todos los tiempos, y <em>de verdad</em> las recomiendo. Si tuviera que quedarme con una, sería <mark>The Expanse</mark>.</p>\n'+
+'\n'+
+'    <p><small>Todas las valoraciones son personales y pueden cambiar con el tiempo.</small></p>\n'+
+'\n'+
+'    <ol>\n'+
+'      <li><strong>Stranger Things</strong> — misterio y nostalgia ochentera.</li>\n'+
+'      <li><strong>Black Mirror</strong> — tecnología y futuro inquietante.</li>\n'+
+'      <li><strong>The Expanse</strong> — política y supervivencia en el espacio.</li>\n'+
+'    </ol>\n'+
+'  </main>\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[6] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis <strong>tres series de ciencia ficción</strong> favoritas de todos los tiempos, y <em>de verdad</em> las recomiendo. Si tuviera que quedarme con una, sería <mark>The Expanse</mark>.</p>\n'+
+'\n'+
+'    <p><small>Todas las valoraciones son personales y pueden cambiar con el tiempo.</small></p>\n'+
+'\n'+
+'    <ol>\n'+
+'      <li><strong>Stranger Things</strong> — misterio y nostalgia ochentera.</li>\n'+
+'      <li><strong>Black Mirror</strong> — tecnología y futuro inquietante.</li>\n'+
+'      <li><strong>The Expanse</strong> — política y supervivencia en el espacio.</li>\n'+
+'    </ol>\n'+
+'\n'+
+'    <hr>\n'+
+'  </main>\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[7] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis <strong>tres series de ciencia ficción</strong> favoritas de todos los tiempos, y <em>de verdad</em> las recomiendo. Si tuviera que quedarme con una, sería <mark>The Expanse</mark>.</p>\n'+
+'\n'+
+'    <p><small>Todas las valoraciones son personales y pueden cambiar con el tiempo.</small></p>\n'+
+'\n'+
+'    <ol>\n'+
+'      <li><strong>Stranger Things</strong> — misterio y nostalgia ochentera.</li>\n'+
+'      <li><strong>Black Mirror</strong> — tecnología y futuro inquietante.</li>\n'+
+'      <li><strong>The Expanse</strong> — política y supervivencia en el espacio.</li>\n'+
+'    </ol>\n'+
+'\n'+
+'    <hr>\n'+
+'\n'+
+'    <img src="serie.jpg" alt="Fotograma de una serie de ciencia ficción">\n'+
+'  </main>\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[8] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis <strong>tres series de ciencia ficción</strong> favoritas de todos los tiempos, y <em>de verdad</em> las recomiendo. Si tuviera que quedarme con una, sería <mark>The Expanse</mark>.</p>\n'+
+'\n'+
+'    <p><small>Todas las valoraciones son personales y pueden cambiar con el tiempo.</small></p>\n'+
+'\n'+
+'    <ol>\n'+
+'      <li><strong>Stranger Things</strong> — misterio y nostalgia ochentera.</li>\n'+
+'      <li><strong>Black Mirror</strong> — tecnología y futuro inquietante.</li>\n'+
+'      <li><strong>The Expanse</strong> — política y supervivencia en el espacio.</li>\n'+
+'    </ol>\n'+
+'\n'+
+'    <hr>\n'+
+'\n'+
+'    <img src="serie.jpg" alt="Fotograma de una serie de ciencia ficción">\n'+
+'\n'+
+'    <p>Puedes ver más en la <a href="https://www.imdb.com" target="_blank" rel="noopener noreferrer">web oficial</a>.</p>\n'+
+'  </main>\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[9] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'  <style>\n'+
+'    table { border-collapse: collapse; margin-top: 10px; }\n'+
+'    th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; }\n'+
+'    caption { font-weight: bold; margin-bottom: 6px; }\n'+
+'  </style>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis <strong>tres series de ciencia ficción</strong> favoritas de todos los tiempos, y <em>de verdad</em> las recomiendo. Si tuviera que quedarme con una, sería <mark>The Expanse</mark>.</p>\n'+
+'\n'+
+'    <p><small>Todas las valoraciones son personales y pueden cambiar con el tiempo.</small></p>\n'+
+'\n'+
+'    <ol>\n'+
+'      <li><strong>Stranger Things</strong> — misterio y nostalgia ochentera.</li>\n'+
+'      <li><strong>Black Mirror</strong> — tecnología y futuro inquietante.</li>\n'+
+'      <li><strong>The Expanse</strong> — política y supervivencia en el espacio.</li>\n'+
+'    </ol>\n'+
+'\n'+
+'    <hr>\n'+
+'\n'+
+'    <img src="serie.jpg" alt="Fotograma de una serie de ciencia ficción">\n'+
+'\n'+
+'    <p>Puedes ver más en la <a href="https://www.imdb.com" target="_blank" rel="noopener noreferrer">web oficial</a>.</p>\n'+
+'\n'+
+'    <table>\n'+
+'      <caption>Comparativa de mis series favoritas</caption>\n'+
+'      <thead>\n'+
+'        <tr><th>Serie</th><th>Temporadas</th><th>Valoración</th></tr>\n'+
+'      </thead>\n'+
+'      <tbody>\n'+
+'        <tr><td>Stranger Things</td><td>4</td><td>9/10</td></tr>\n'+
+'        <tr><td>Black Mirror</td><td>6</td><td>8.5/10</td></tr>\n'+
+'        <tr><td>The Expanse</td><td>6</td><td>9.5/10</td></tr>\n'+
+'      </tbody>\n'+
+'    </table>\n'+
+'  </main>\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[10] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'  <style>\n'+
+'    table { border-collapse: collapse; margin-top: 10px; }\n'+
+'    th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; }\n'+
+'    caption { font-weight: bold; margin-bottom: 6px; }\n'+
+'  </style>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis <strong>tres series de ciencia ficción</strong> favoritas de todos los tiempos, y <em>de verdad</em> las recomiendo. Si tuviera que quedarme con una, sería <mark>The Expanse</mark>.</p>\n'+
+'\n'+
+'    <p><small>Todas las valoraciones son personales y pueden cambiar con el tiempo.</small></p>\n'+
+'\n'+
+'    <ol>\n'+
+'      <li><strong>Stranger Things</strong> — misterio y nostalgia ochentera.</li>\n'+
+'      <li><strong>Black Mirror</strong> — tecnología y futuro inquietante.</li>\n'+
+'      <li><strong>The Expanse</strong> — política y supervivencia en el espacio.</li>\n'+
+'    </ol>\n'+
+'\n'+
+'    <hr>\n'+
+'\n'+
+'    <img src="serie.jpg" alt="Fotograma de una serie de ciencia ficción">\n'+
+'\n'+
+'    <p>Puedes ver más en la <a href="https://www.imdb.com" target="_blank" rel="noopener noreferrer">web oficial</a>.</p>\n'+
+'\n'+
+'    <table>\n'+
+'      <caption>Comparativa de mis series favoritas</caption>\n'+
+'      <thead>\n'+
+'        <tr><th colspan="4">Top 3 · Ciencia ficción</th></tr>\n'+
+'        <tr><th>Serie</th><th>Categoría</th><th>Temporadas</th><th>Valoración</th></tr>\n'+
+'      </thead>\n'+
+'      <tbody>\n'+
+'        <tr><td>Stranger Things</td><td rowspan="3">Ciencia ficción</td><td>4</td><td>9/10</td></tr>\n'+
+'        <tr><td>Black Mirror</td><td>6</td><td>8.5/10</td></tr>\n'+
+'        <tr><td>The Expanse</td><td>6</td><td>9.5/10</td></tr>\n'+
+'      </tbody>\n'+
+'    </table>\n'+
+'  </main>\n'+
+'</body>\n'+
+'</html>';
+
+  CODE[11] =
+'<!DOCTYPE html>\n'+
+'<html lang="es">\n'+
+'<head>\n'+
+'  <meta charset="UTF-8">\n'+
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'  <title>Mis series favoritas</title>\n'+
+'  <style>\n'+
+'    table { border-collapse: collapse; margin-top: 10px; }\n'+
+'    th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; }\n'+
+'    caption { font-weight: bold; margin-bottom: 6px; }\n'+
+'  </style>\n'+
+'</head>\n'+
+'<body>\n'+
+'  <header>\n'+
+'    <h1>Mi Top 3: series de ciencia ficción</h1>\n'+
+'  </header>\n'+
+'\n'+
+'  <main>\n'+
+'    <p>Estas son mis <strong>tres series de ciencia ficción</strong> favoritas de todos los tiempos, y <em>de verdad</em> las recomiendo. Si tuviera que quedarme con una, sería <mark>The Expanse</mark>.</p>\n'+
+'\n'+
+'    <p><small>Todas las valoraciones son personales y pueden cambiar con el tiempo.</small></p>\n'+
+'\n'+
+'    <ol>\n'+
+'      <li><strong>Stranger Things</strong> — misterio y nostalgia ochentera.</li>\n'+
+'      <li><strong>Black Mirror</strong> — tecnología y futuro inquietante.</li>\n'+
+'      <li><strong>The Expanse</strong> — política y supervivencia en el espacio.</li>\n'+
+'    </ol>\n'+
+'\n'+
+'    <hr>\n'+
+'\n'+
+'    <img src="serie.jpg" alt="Fotograma de una serie de ciencia ficción">\n'+
+'\n'+
+'    <p>Puedes ver más en la <a href="https://www.imdb.com" target="_blank" rel="noopener noreferrer">web oficial</a>.</p>\n'+
+'\n'+
+'    <table>\n'+
+'      <caption>Comparativa de mis series favoritas</caption>\n'+
+'      <thead>\n'+
+'        <tr><th colspan="4">Top 3 · Ciencia ficción</th></tr>\n'+
+'        <tr><th>Serie</th><th>Categoría</th><th>Temporadas</th><th>Valoración</th></tr>\n'+
+'      </thead>\n'+
+'      <tbody>\n'+
+'        <tr><td>Stranger Things</td><td rowspan="3">Ciencia ficción</td><td>4</td><td>9/10</td></tr>\n'+
+'        <tr><td>Black Mirror</td><td>6</td><td>8.5/10</td></tr>\n'+
+'        <tr><td>The Expanse</td><td>6</td><td>9.5/10</td></tr>\n'+
+'      </tbody>\n'+
+'    </table>\n'+
+'  </main>\n'+
+'\n'+
+'  <footer>\n'+
+'    <address>\n'+
+'      Creado por un servidor · <a href="mailto:hola@ejemplo.com">hola@ejemplo.com</a>\n'+
+'    </address>\n'+
+'    <p>&copy; 2025 Todos los derechos reservados.</p>\n'+
+'  </footer>\n'+
+'</body>\n'+
+'</html>';
+
+  var N = CODE.length;
+
+  // ---------------------------------------------------------------
+  // 2. Resaltado de sintaxis HTML -> tokens con clases de color
+  // ---------------------------------------------------------------
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function tokenizeTag(tag){
+    var out = [];
+    var m = tag.match(/^(<\/?)([a-zA-Z0-9!]+)([\s\S]*?)(\/?>)$/);
+    if(!m) return [[tag,'tx']];
+    out.push([m[1],'pc']); out.push([m[2],'tag']);
+    var attrs = m[3], last = 0, are = /(\s+)([a-zA-Z-]+)(=)("[^"]*")/g, a;
+    while((a = are.exec(attrs))){
+      if(a.index > last) out.push([attrs.slice(last,a.index),'tx']);
+      out.push([a[1],'tx']); out.push([a[2],'at']); out.push([a[3],'pc']); out.push([a[4],'st']);
+      last = a.index + a[0].length;
+    }
+    if(last < attrs.length) out.push([attrs.slice(last),'tx']);
+    out.push([m[4],'pc']);
+    return out;
+  }
+  function tokenizeLine(raw){
+    var tokens = [];
+    if(/^\s*<!--/.test(raw)){ tokens.push([raw,'cm']); return tokens; }
+    var re = /<\/?[a-zA-Z!][^>]*>/g, last = 0, m;
+    while((m = re.exec(raw))){
+      if(m.index > last) tokens.push([raw.slice(last,m.index),'tx']);
+      tokens = tokens.concat(tokenizeTag(m[0]));
+      last = m.index + m[0].length;
+    }
+    if(last < raw.length) tokens.push([raw.slice(last),'tx']);
+    if(tokens.length === 0) tokens.push([raw || ' ','tx']);
+    return tokens;
+  }
+  function renderLineHTML(raw){
+    return tokenizeLine(raw).map(function(t){
+      return '<span class="tk-'+t[1]+'">'+escapeHtml(t[0])+'</span>';
+    }).join('');
+  }
+
+  // ---------------------------------------------------------------
+  // 3. Diff de líneas (LCS) para saber qué líneas son nuevas
+  // ---------------------------------------------------------------
+  function diffAdded(oldLines, newLines){
+    var n = oldLines.length, m = newLines.length;
+    var dp = [];
+    for(var i=0;i<=n;i++){ dp.push(new Array(m+1).fill(0)); }
+    for(i=n-1;i>=0;i--){
+      for(var j=m-1;j>=0;j--){
+        dp[i][j] = (oldLines[i] === newLines[j]) ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+      }
+    }
+    var matched = new Array(m).fill(false);
+    i=0; var jj=0;
+    while(i<n && jj<m){
+      if(oldLines[i] === newLines[jj]){ matched[jj]=true; i++; jj++; }
+      else if(dp[i+1][jj] >= dp[i][jj+1]) i++;
+      else jj++;
+    }
+    return newLines.map(function(_,idx){ return !matched[idx]; });
+  }
+
+  // ---------------------------------------------------------------
+  // 4. Render de cada panel
+  // ---------------------------------------------------------------
+  var reqListEl = document.getElementById('reqList');
+  REQS.forEach(function(r, idx){
+    var el = document.createElement('div');
+    el.className = 'req-item';
+    el.dataset.idx = idx;
+    el.innerHTML =
+      '<div class="req-num">'+(idx+1)+'</div>'+
+      '<div class="req-body"><h4>'+r.title+'</h4><p>'+r.body+'</p></div>';
+    el.addEventListener('click', function(){ goTo(idx, true); });
+    reqListEl.appendChild(el);
+  });
+  document.getElementById('reqOutro').innerHTML =
+    '<b>Después de este ejemplo:</b> aplica exactamente el mismo proceso — leer el enunciado, traducirlo a etiquetas, escribir y comprobar en el navegador — en los ejercicios 1 (Diario de noticias), 2 (Libro de recetas) y 3 (Tablas y caracteres especiales).';
+  var reqItems = Array.prototype.slice.call(document.querySelectorAll('.req-item'));
+
+  var dotsWrap = document.getElementById('dots');
+  for(var d=0; d<N; d++){
+    var b = document.createElement('button');
+    b.className = 'dot'; b.dataset.idx = d;
+    b.title = 'Paso ' + (d+1);
+    b.addEventListener('click', function(){ goTo(parseInt(this.dataset.idx,10), true); });
+    dotsWrap.appendChild(b);
+  }
+  var dotEls = Array.prototype.slice.call(document.querySelectorAll('.dot'));
+
+  var codeScroll = document.getElementById('codeScroll');
+  var previewFrame = document.getElementById('previewFrame');
+  var explainText = document.getElementById('explainText');
+  var stepIndicator = document.getElementById('stepIndicator');
+  var progressFill = document.getElementById('progressFill');
+  var stepTitle = document.getElementById('stepTitle');
+
+  var current = 0;
+  var playing = false;
+  var timer = null;
+
+  function renderCode(idx){
+    var prevLines = idx > 0 ? CODE[idx-1].split('\n') : [];
+    var lines = CODE[idx].split('\n');
+    var added = diffAdded(prevLines, lines);
+    var html = '';
+    for(var i=0;i<lines.length;i++){
+      html += '<div class="code-line'+(added[i] ? ' added':'')+'">'+
+              '<span class="ln-no">'+(i+1)+'</span>'+
+              '<span class="ln-code">'+renderLineHTML(lines[i])+'</span>'+
+              '</div>';
+    }
+    codeScroll.innerHTML = html;
+    var firstAdded = added.indexOf(true);
+    if(firstAdded > -1){
+      var els = codeScroll.querySelectorAll('.code-line');
+      if(els[firstAdded]){
+        requestAnimationFrame(function(){
+          els[firstAdded].scrollIntoView({block:'center', behavior:'smooth'});
+        });
+      }
+    }
+  }
+
+  function renderPreview(idx){
+    previewFrame.srcdoc = CODE[idx];
+  }
+
+  function renderReq(idx){
+    reqItems.forEach(function(el, i){
+      el.classList.toggle('active', i === idx);
+      el.classList.toggle('done', i < idx);
+    });
+    var activeEl = reqItems[idx];
+    if(activeEl){
+      activeEl.scrollIntoView({block:'nearest', behavior:'smooth'});
+    }
+  }
+
+  function renderDots(idx){
+    dotEls.forEach(function(el, i){
+      el.classList.toggle('active', i === idx);
+      el.classList.toggle('done', i < idx);
+    });
+  }
+
+  function renderMeta(idx){
+    stepIndicator.textContent = 'Paso ' + (idx+1) + ' / ' + N;
+    progressFill.style.width = (((idx+1)/N) * 100) + '%';
+    explainText.innerHTML = EXPLAIN[idx];
+  }
+
+  function render(idx){
+    renderCode(idx);
+    renderPreview(idx);
+    renderReq(idx);
+    renderDots(idx);
+    renderMeta(idx);
+  }
+
+  function goTo(idx, userInitiated){
+    if(idx < 0) idx = 0;
+    if(idx > N-1) idx = N-1;
+    current = idx;
+    render(current);
+    if(userInitiated){ stopPlaying(); }
+  }
+
+  function next(){
+    if(current >= N-1){ stopPlaying(); return; }
+    goTo(current+1, false);
+  }
+  function prev(){ goTo(current-1, true); }
+
+  var iconPlay = document.getElementById('iconPlay');
+  var iconPause = document.getElementById('iconPause');
+  var btnPlay = document.getElementById('btnPlay');
+
+  function startPlaying(){
+    if(current >= N-1){ goTo(0,false); }
+    playing = true;
+    iconPlay.style.display = 'none';
+    iconPause.style.display = '';
+    scheduleNext();
+  }
+  function stopPlaying(){
+    playing = false;
+    iconPlay.style.display = '';
+    iconPause.style.display = 'none';
+    if(timer){ clearTimeout(timer); timer = null; }
+  }
+  function scheduleNext(){
+    if(timer) clearTimeout(timer);
+    var speed = parseInt(document.getElementById('speedSelect').value, 10);
+    timer = setTimeout(function(){
+      if(!playing) return;
+      if(current >= N-1){ stopPlaying(); return; }
+      goTo(current+1, false);
+      scheduleNext();
+    }, speed);
+  }
+
+  btnPlay.addEventListener('click', function(){
+    if(playing) stopPlaying(); else startPlaying();
+  });
+  document.getElementById('btnNext').addEventListener('click', function(){ stopPlaying(); next(); });
+  document.getElementById('btnPrev').addEventListener('click', prev);
+  document.getElementById('btnRestart').addEventListener('click', function(){ goTo(0,true); });
+
+  document.getElementById('progressTrack').addEventListener('click', function(e){
+    var rect = this.getBoundingClientRect();
+    var ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    goTo(Math.round(ratio * (N-1)), true);
+  });
+
+  document.addEventListener('keydown', function(e){
+    if(e.target && (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT')) return;
+    if(e.key === 'ArrowRight'){ stopPlaying(); next(); }
+    else if(e.key === 'ArrowLeft'){ prev(); }
+    else if(e.key === ' '){ e.preventDefault(); if(playing) stopPlaying(); else startPlaying(); }
+    else if(e.key === 'r' || e.key === 'R'){ goTo(0,true); }
+  });
+
+  // Init
+  render(0);
+})();
+</script>
+</body>
+</html>
